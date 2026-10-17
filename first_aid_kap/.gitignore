@@ -1,0 +1,4 @@
+# Participant data (contains or derives from national IDs) must never be committed.
+output/
+*.xlsx
+*.sav
