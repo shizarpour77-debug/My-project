@@ -36,3 +36,27 @@
 pip install pandas openpyxl pyreadstat jdatetime
 python clean_first_aid.py PRETEST.xlsx POSTTEST.xlsx output
 ```
+
+## نسخه‌ی R
+`build_r_data.R` فایل‌های CSV پوشه‌ی `output/r_input/` را به داده‌های نوع‌دار R تبدیل می‌کند (فقط با base R) و در `output/R/` ذخیره می‌کند:
+
+| شیء | ردیف | توضیح |
+|---|---|---|
+| `paired` | ۵۵۰۵ | یک ردیف به ازای هر نفر، متغیرهای `pre_*` و `post_*`؛ برای تحلیل اصلی `subset(paired, analysable)` |
+| `attempts` | ۹۸۹۷ | همه‌ی تلاش‌ها؛ `phase` (pre/post)، `selected` |
+| `item_responses` | ۱۹۵۵۹۹ | یک ردیف به ازای هر سؤالِ ارائه‌شده در هر تلاش؛ مناسب مدل آمیخته‌ی لجستیک |
+| `items` | ۳۶ | کلید پاسخ، درصد پاسخ صحیح، همبستگی آیتم با بقیه، `doubtful` |
+| `dict` | — | دیکشنری متغیرها (نوع، برچسب، سطوح، تعداد گمشده) |
+
+- متغیرهای بله/خیر از نوع `logical` هستند و `Qxx_c` از نوع عدد صحیح ۰/۱.
+- `region` فاکتوری با سطوح D01 تا D22 است و `know_cat` فاکتور مرتب (poor < moderate < good).
+- `Qxx_r` فاکتوری است که متن فارسی گزینه‌ها را دارد. گزینه‌ی صحیح با پیشوند «صحیح:» مشخص شده و مقدار ۹ به NA تبدیل شده است.
+- تاریخ‌ها از نوع `POSIXct` با منطقه‌ی زمانی Asia/Tehran هستند.
+- برچسب فارسی/انگلیسی هر متغیر در `attr(x, "label")` ذخیره شده است.
+
+`analysis.R` تحلیل‌های اصلی را انجام می‌دهد: t زوجی، ویلکاکسون، dz کوهن، آزمون Bowker، مک‌نمار برای هر آیتم با اصلاح Holm، کروسکال-والیس و ANCOVA بین مناطق، و مدل `glmer` با اثر تصادفی فرد و آیتم.
+
+```
+python clean_first_aid.py PRETEST.xlsx POSTTEST.xlsx output
+Rscript build_r_data.R output
+```

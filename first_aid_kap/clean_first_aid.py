@@ -329,6 +329,36 @@ def main(pre_path, post_path, out_dir):
         pd.DataFrame({"step": log}).to_excel(xw, sheet_name="cleaning_log", index=False)
     (out_dir / "cleaning_log.txt").write_text("\n".join(log), encoding="utf-8")
 
+    # ---------- plain UTF-8 CSVs for R (build_r_data.R turns them into .rds/.RData) ----------
+    r_dir = out_dir / "r_input"
+    r_dir.mkdir(exist_ok=True)
+    long_df.to_csv(r_dir / "attempts.csv", index=False, encoding="utf-8", date_format="%Y-%m-%d %H:%M:%S")
+    wide.to_csv(r_dir / "paired.csv", index=False, encoding="utf-8", date_format="%Y-%m-%d %H:%M:%S")
+    # One row per presented item per attempt (tidy format for mixed models).
+    tidy = att.melt(id_vars=["pid", "attempt_id", "phase", "selected"],
+                    value_vars=[f"Q{i:02d}_c" for i in range(1, N_ITEMS + 1)],
+                    var_name="item", value_name="correct").dropna(subset=["correct"])
+    tidy["item"] = tidy["item"].str[:3]
+    resp_long = att.melt(id_vars=["attempt_id"], value_vars=[f"Q{i:02d}_r" for i in range(1, N_ITEMS + 1)],
+                         var_name="item", value_name="response")
+    resp_long["item"] = resp_long["item"].str[:3]
+    tidy = tidy.merge(resp_long, on=["attempt_id", "item"], how="left")
+    tidy["doubtful_item"] = tidy.item.str[1:].astype(int).isin(DOUBTFUL).astype(int)
+    tidy.sort_values(["pid", "phase", "attempt_id", "item"]).to_csv(r_dir / "item_responses.csv", index=False,
+                                                                    encoding="utf-8")
+    items_df = pd.DataFrame(item_rows)
+    items_df["doubtful"] = items_df.item.str[1:].astype(int).isin(DOUBTFUL).astype(int)
+    items_df["question_pre"] = q_pre
+    items_df.to_csv(r_dir / "items.csv", index=False, encoding="utf-8")
+    pd.concat([cb_long.assign(dataset="attempts"), cb_wide.assign(dataset="paired")])[
+        ["dataset", "variable", "label"]].to_csv(r_dir / "var_labels.csv", index=False, encoding="utf-8")
+    vl = [{"dataset": "attempts", "variable": v, "code": int(k), "label": lab}
+          for v in long_cols if v in val for k, lab in val[v].items()]
+    vl += [{"dataset": "paired", "variable": v, "code": int(k), "label": lab}
+           for v in wide_cols if wval(v) for k, lab in wval(v).items()]
+    pd.DataFrame(vl).to_csv(r_dir / "value_labels.csv", index=False, encoding="utf-8")
+    pd.DataFrame({"step": log}).to_csv(r_dir / "cleaning_log.csv", index=False, encoding="utf-8")
+
 
 if __name__ == "__main__":
     main(*sys.argv[1:4])
