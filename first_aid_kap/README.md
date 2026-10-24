@@ -60,3 +60,9 @@ python clean_first_aid.py PRETEST.xlsx POSTTEST.xlsx output
 python clean_first_aid.py PRETEST.xlsx POSTTEST.xlsx output
 Rscript build_r_data.R output
 ```
+
+## نسخه‌ی CSV
+`build_r_data.R` علاوه بر فایل‌های R، پوشه‌ی `output/csv/` را هم می‌سازد. همه‌ی فایل‌ها UTF-8 با BOM هستند تا متن فارسی در Excel درست نمایش داده شود.
+- `paired_labelled.csv`، `attempts_labelled.csv`: مقادیر به‌صورت برچسب متنی (pre/post، D01 تا D22، poor/moderate/good، متن گزینه‌ها، TRUE/FALSE).
+- `paired_coded.csv`، `attempts_coded.csv`: مقادیر عددی، همراه با جدول‌های راهنمای `value_labels.csv` و `variable_labels.csv`.
+- `item_responses.csv`، `items_answer_key.csv`، `data_dictionary.csv`، `cleaning_log.csv`.

@@ -102,5 +102,37 @@ objs <- c("attempts", "paired", "item_responses", "items", "dict", "cleaning_log
 for (o in objs) saveRDS(get(o), file.path(r_dir, paste0(o, ".rds")))
 save(list = objs, file = file.path(r_dir, "first_aid.RData"))
 write.csv(dict, file.path(r_dir, "data_dictionary.csv"), row.names = FALSE, fileEncoding = "UTF-8")
+
+# ---- CSV copies (UTF-8 with BOM so Excel shows Persian; factors written as labels) ----
+csv_dir <- file.path(out_dir, "csv")
+dir.create(csv_dir, showWarnings = FALSE)
+write_csv_utf8 <- function(d, f) {
+  cell <- function(x) {
+    if (inherits(x, "POSIXct")) x <- format(x, "%Y-%m-%d %H:%M:%S")
+    x <- enc2utf8(as.character(x))
+    q <- !is.na(x) & grepl('[",\n]', x, useBytes = TRUE)
+    x[q] <- paste0('"', gsub('"', '""', x[q], useBytes = TRUE), '"')
+    x[is.na(x)] <- ""
+    x
+  }
+  cols <- lapply(d, cell)
+  lines <- c(paste(enc2utf8(names(d)), collapse = ","), do.call(paste, c(cols, sep = ",")))
+  con <- file(file.path(csv_dir, f), "wb")
+  writeBin(as.raw(c(0xEF, 0xBB, 0xBF)), con)
+  writeLines(lines, con, useBytes = TRUE)
+  close(con)
+}
+write_csv_utf8(paired, "paired_labelled.csv")
+write_csv_utf8(attempts, "attempts_labelled.csv")
+write_csv_utf8(item_responses, "item_responses.csv")
+write_csv_utf8(items, "items_answer_key.csv")
+write_csv_utf8(dict, "data_dictionary.csv")
+write_csv_utf8(cleaning_log, "cleaning_log.csv")
+# Numeric-coded versions with their label tables.
+write_csv_utf8(rd("paired.csv"), "paired_coded.csv")
+write_csv_utf8(rd("attempts.csv"), "attempts_coded.csv")
+write_csv_utf8(value_labels, "value_labels.csv")
+write_csv_utf8(var_labels, "variable_labels.csv")
+
 cat(sprintf("%-15s %6d rows x %3d cols\n", objs, sapply(objs, function(o) nrow(get(o))),
             sapply(objs, function(o) ncol(get(o)))), sep = "")
